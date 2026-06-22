@@ -1,0 +1,32 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li class="active"><a>{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+      </ul>
+      <div style="padding:40px;text-align:center;color:#999;">
+        <p>{{lang.please_config}}</p>
+      </div>
+    </t-card>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script>
+(function (window, undefined) {
+  var old_onload = window.onload;
+  window.onload = function () {
+    var template = document.getElementsByClassName("template")[0];
+    Vue.prototype.lang = Object.assign(window.lang, window.plugin_lang);
+    new Vue({
+      components: { comConfig },
+    }).$mount(template);
+    typeof old_onload == "function" && old_onload();
+  };
+})(window);
+</script>

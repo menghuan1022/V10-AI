@@ -1,0 +1,52 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li><a href="ai_ticket_model.htm">{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li class="active"><a>{{lang.product_bind}}</a></li>
+        <li><a href="ai_ticket_log.htm">{{lang.ai_log}}</a></li>
+        <li><a href="ai_ticket_tool.htm">{{lang.ai_tool}}</a></li>
+        <li><a href="ai_ticket_setting.htm">{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <div class="order-search-wrapper">
+        <div class="flex">
+          <t-button theme="primary" @click="showAddDialog">{{lang.add_product_bind}}</t-button>
+          <t-select v-model="filterTypeId" :placeholder="lang.filter_type" clearable
+            :options="typeOptions" :keys="{label:'name',value:'id'}" class="com-gap select-time" @change="doSearch"></t-select>
+        </div>
+      </div>
+
+      <t-table :data="list" :columns="columns" :loading="loading" row-key="id" hover>
+        <template #op="{row}">
+          <t-button theme="danger" variant="text" size="small" @click="deleteRow(row)">{{lang.delete}}</t-button>
+        </template>
+      </t-table>
+
+      <com-pagination :total="count" :page="params.page" :limit="params.limit" @change="changePage"></com-pagination>
+    </t-card>
+
+    <!-- 添加关联弹窗 -->
+    <t-dialog :header="lang.add_product_bind" :footer="false" :visible.sync="addVisible" destroy-on-close>
+      <t-form :data="formData" :rules="formRules" ref="formRef" label-align="top" @submit="submitRow">
+        <t-form-item :label="lang.ticket_type" name="ticket_type_id">
+          <t-select v-model="formData.ticket_type_id" :options="typeOptions" :keys="{label:'name',value:'id'}"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.product" name="product_ids">
+          <t-select v-model="formData.product_ids" :options="productOptions" :keys="{label:'name',value:'id'}" multiple :placeholder="lang.select_product"></t-select>
+        </t-form-item>
+        <t-form-item>
+          <t-button theme="primary" type="submit">{{lang.submit}}</t-button>
+          <t-button theme="default" @click="addVisible = false" style="margin-left:10px;">{{lang.cancel || '取消'}}</t-button>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/product.js"></script>

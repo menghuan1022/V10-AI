@@ -1,0 +1,58 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li><a href="ai_ticket_model.htm">{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+        <li class="active"><a>{{lang.ai_log}}</a></li>
+        <li><a href="ai_ticket_tool.htm">{{lang.ai_tool}}</a></li>
+        <li><a href="ai_ticket_setting.htm">{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <t-table :data="list" :columns="columns" :loading="loading" row-key="id" hover>
+        <template #reply_content="{row}">
+          <t-tooltip :content="row.reply_content">
+            <span>{{row.reply_content ? (row.reply_content.length > 40 ? row.reply_content.substring(0,40)+'...' : row.reply_content) : '-'}}</span>
+          </t-tooltip>
+        </template>
+        <template #create_time="{row}">
+          {{formatTime(row.create_time)}}
+        </template>
+        <template #op="{row}">
+          <t-button theme="primary" variant="text" size="small" @click="viewDetail(row)">{{lang.view_detail}}</t-button>
+          <t-button theme="danger" variant="text" size="small" @click="deleteRow(row)">{{lang.delete}}</t-button>
+        </template>
+      </t-table>
+
+      <com-pagination :total="count" :page="params.page" :limit="params.limit" @change="changePage"></com-pagination>
+    </t-card>
+
+    <!-- 详情弹窗 -->
+    <t-dialog :header="lang.view_detail" :footer="false" :visible.sync="detailVisible" destroy-on-close width="700px">
+      <t-descriptions v-if="currentRow" :column="1" bordered size="small">
+        <t-descriptions-item :label="lang.log_id">{{currentRow.id}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.ticket_id">{{currentRow.ticket_id}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.ticket_title">{{currentRow.ticket_title || '-'}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.model_name_col">{{currentRow.model_name || '-'}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.tokens_used">{{currentRow.tokens_used || '-'}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.reply_time">{{formatTime(currentRow.create_time)}}</t-descriptions-item>
+        <t-descriptions-item :label="lang.reply_content">
+          <div style="max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all;">{{currentRow.reply_content || '-'}}</div>
+        </t-descriptions-item>
+        <t-descriptions-item :label="lang.context">
+          <div style="max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all;">{{currentRow.context || '-'}}</div>
+        </t-descriptions-item>
+        <t-descriptions-item :label="lang.raw_response">
+          <div style="max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-all;">{{currentRow.response || '-'}}</div>
+        </t-descriptions-item>
+      </t-descriptions>
+    </t-dialog>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/log.js"></script>

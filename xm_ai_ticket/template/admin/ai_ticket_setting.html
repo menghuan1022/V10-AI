@@ -1,0 +1,76 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li><a href="ai_ticket_model.htm">{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+        <li><a href="ai_ticket_log.htm">{{lang.ai_log}}</a></li>
+        <li><a href="ai_ticket_tool.htm">{{lang.ai_tool}}</a></li>
+        <li class="active"><a>{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <t-form :data="formData" :rules="formRules" ref="formRef" label-align="top" @submit="submitConfig">
+        <t-form-item :label="lang.enable_ai" name="enable">
+          <t-select v-model="formData.enable" :options="enableOptions"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.cron_config" name="cron">
+          <t-input :value="cronUrl" readonly>
+            <template #suffix-icon>
+              <t-button theme="primary" variant="text" size="small" @click="copyCronUrl">{{lang.copy}}</t-button>
+            </template>
+          </t-input>
+        </t-form-item>
+        <t-form-item :label="lang.default_reply_interval" name="default_reply_interval">
+          <t-input-number v-model="formData.default_reply_interval" :min="10" :max="600"></t-input-number>
+          <span style="margin-left:8px;">{{lang.second}}</span>
+        </t-form-item>
+        <t-form-item :label="lang.default_max_chars" name="default_max_chars">
+          <t-input-number v-model="formData.default_max_chars" :min="10" :max="500"></t-input-number>
+          <span style="margin-left:8px;">{{lang.char}}</span>
+        </t-form-item>
+        <t-form-item :label="lang.default_persona" name="default_persona">
+          <t-textarea v-model="formData.default_persona" :placeholder="lang.persona_placeholder" :maxlength="1000"></t-textarea>
+        </t-form-item>
+        <t-form-item :label="lang.transfer_keywords" name="transfer_keywords">
+          <t-input v-model="formData.transfer_keywords" :placeholder="'转人工,人工客服,人工服务,转接人工'"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.transfer_method" name="transfer_method">
+          <t-select v-model="formData.transfer_method" :options="transferMethodOptions"></t-select>
+        </t-form-item>
+        <t-form-item v-if="showFeishuConfig" :label="lang.feishu_webhook" name="feishu_webhook">
+          <t-input v-model="formData.feishu_webhook" :placeholder="lang.feishu_webhook_placeholder">
+            <template #suffix-icon>
+              <t-button theme="primary" variant="text" size="small" @click="testFeishu" :loading="feishuTesting">{{lang.test_feishu}}</t-button>
+            </template>
+          </t-input>
+        </t-form-item>
+        <t-form-item v-if="showAutoReplyConfig" :label="lang.transfer_auto_reply" name="transfer_auto_reply">
+          <t-textarea v-model="formData.transfer_auto_reply" :placeholder="lang.transfer_auto_reply_placeholder" :maxlength="500"></t-textarea>
+        </t-form-item>
+        <t-form-item :label="lang.context_max_chars" name="context_max_chars">
+          <t-input-number v-model="formData.context_max_chars" :min="500" :max="10000"></t-input-number>
+        </t-form-item>
+        <t-divider>{{lang.client_context_title}}</t-divider>
+        <t-form-item :label="lang.enable_client_context" name="enable_client_context">
+          <t-select v-model="formData.enable_client_context" :options="enableOptions"></t-select>
+        </t-form-item>
+        <t-form-item v-if="formData.enable_client_context===1" :label="lang.client_context_hosts_limit" name="client_context_hosts_limit">
+          <t-input-number v-model="formData.client_context_hosts_limit" :min="1" :max="50"></t-input-number>
+        </t-form-item>
+        <t-form-item v-if="formData.enable_client_context===1" :label="lang.client_context_orders_limit" name="client_context_orders_limit">
+          <t-input-number v-model="formData.client_context_orders_limit" :min="1" :max="20"></t-input-number>
+        </t-form-item>
+        <t-form-item>
+          <t-button theme="primary" type="submit">{{lang.submit}}</t-button>
+        </t-form-item>
+      </t-form>
+    </t-card>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/setting.js"></script>

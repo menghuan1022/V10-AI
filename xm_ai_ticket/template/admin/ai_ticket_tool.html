@@ -1,0 +1,132 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li><a href="ai_ticket_model.htm">{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+        <li><a href="ai_ticket_log.htm">{{lang.ai_log}}</a></li>
+        <li class="active"><a>{{lang.ai_tool}}</a></li>
+        <li><a href="ai_ticket_setting.htm">{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <div class="order-search-wrapper">
+        <div class="flex">
+          <t-button theme="primary" @click="showAddDialog">{{lang.add_tool}}</t-button>
+          <t-select v-model="filterType" :placeholder="lang.tool_type" clearable
+            :options="typeOptions" class="com-gap select-time" @change="doSearch"></t-select>
+          <t-select v-model="filterStatus" :placeholder="lang.status" clearable
+            :options="statusOptions" class="com-gap select-time" @change="doSearch"></t-select>
+        </div>
+      </div>
+
+      <t-table :data="list" :columns="columns" :loading="loading" row-key="id" hover>
+        <template #type="{row}">
+          <t-tag v-if="row.type==='sql'" theme="primary" variant="light">{{lang.tool_type_sql}}</t-tag>
+          <t-tag v-else theme="warning" variant="light">{{lang.tool_type_api}}</t-tag>
+        </template>
+        <template #status="{row}">
+          <t-tag v-if="row.status==1" theme="success" variant="light">{{lang.enabled}}</t-tag>
+          <t-tag v-else theme="danger" variant="light">{{lang.disabled}}</t-tag>
+        </template>
+        <template #op="{row}">
+          <t-button theme="primary" variant="text" size="small" @click="editTool(row)">{{lang.edit}}</t-button>
+          <t-button theme="primary" variant="text" size="small" @click="testTool(row)">{{lang.tool_test}}</t-button>
+          <t-button theme="danger" variant="text" size="small" @click="deleteTool(row)">{{lang.delete}}</t-button>
+        </template>
+      </t-table>
+
+      <com-pagination :total="count" :page="params.page" :limit="params.limit" @change="changePage"></com-pagination>
+    </t-card>
+
+    <!-- 添加/编辑工具弹窗 -->
+    <t-dialog :header="dialogTitle" :footer="false" :visible.sync="addVisible" destroy-on-close width="600px">
+      <t-form :data="formData" :rules="formRules" ref="formRef" label-align="top" @submit="submitTool">
+        <t-form-item :label="lang.tool_name" name="name">
+          <t-input v-model="formData.name" :placeholder="lang.input_tool_name" :disabled="isEdit"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.tool_description" name="description">
+          <t-textarea v-model="formData.description" :placeholder="lang.input_tool_description" :maxlength="500"></t-textarea>
+        </t-form-item>
+        <t-form-item :label="lang.tool_type" name="type">
+          <t-select v-model="formData.type" :options="typeOptions" :disabled="isEdit"></t-select>
+        </t-form-item>
+
+        <!-- SQL工具配置 -->
+        <template v-if="formData.type === 'sql'">
+          <t-form-item :label="lang.tool_config_sql_query" name="sql_query">
+            <t-textarea v-model="formData.sql_query" :placeholder="'SELECT h.id,h.name,h.status FROM idcsmart_host h WHERE h.client_id={client_id} LIMIT 20'" :autosize="{ minRows: 4, maxRows: 8 }"></t-textarea>
+          </t-form-item>
+          <t-form-item :label="lang.tool_config_sql_params">
+            <t-select v-model="formData.sql_params" :options="paramOptions" multiple clearable :placeholder="'选择模板参数'"></t-select>
+          </t-form-item>
+          <div style="background:#f5f5f5;padding:10px;border-radius:4px;font-size:13px;color:#666;margin-bottom:16px;">
+            {{lang.tool_config_tip}}
+          </div>
+        </template>
+
+        <!-- API工具配置 -->
+        <template v-if="formData.type === 'api'">
+          <t-form-item :label="lang.tool_config_api_url" name="api_url">
+            <t-input v-model="formData.api_url" :placeholder="'https://api.xxx.com/server/{host_id}/status'"></t-input>
+          </t-form-item>
+          <t-form-item :label="lang.tool_config_api_method" name="api_method">
+            <t-select v-model="formData.api_method" :options="methodOptions"></t-select>
+          </t-form-item>
+          <t-form-item :label="lang.tool_config_api_headers" name="api_headers">
+            <t-textarea v-model="formData.api_headers" :placeholder="'{\"Authorization\": \"Bearer xxx\"}'" :autosize="{ minRows: 2, maxRows: 4 }"></t-textarea>
+          </t-form-item>
+          <t-form-item :label="lang.tool_config_api_body" name="api_body">
+            <t-textarea v-model="formData.api_body" :placeholder="'请求体JSON，支持{client_id}等模板变量'" :autosize="{ minRows: 2, maxRows: 4 }"></t-textarea>
+          </t-form-item>
+          <t-form-item :label="lang.tool_config_sql_params">
+            <t-select v-model="formData.api_params" :options="paramOptions" multiple clearable :placeholder="'选择模板参数'"></t-select>
+          </t-form-item>
+          <div style="background:#f5f5f5;padding:10px;border-radius:4px;font-size:13px;color:#666;margin-bottom:16px;">
+            {{lang.tool_config_api_tip}}
+          </div>
+        </template>
+
+        <t-form-item :label="lang.tool_status" name="status">
+          <t-switch v-model="formData.status" :custom-value="[1,0]"></t-switch>
+        </t-form-item>
+        <t-form-item>
+          <t-button theme="primary" type="submit">{{lang.submit}}</t-button>
+          <t-button theme="default" @click="addVisible = false" style="margin-left:10px;">{{lang.cancel || '取消'}}</t-button>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+
+    <!-- 测试工具弹窗 -->
+    <t-dialog :header="lang.tool_test_result" :footer="false" :visible.sync="testVisible" width="550px">
+      <div v-if="testLoading" style="text-align:center;padding:20px;">
+        <t-loading size="medium"></t-loading>
+        <p>{{lang.tool_test_running}}</p>
+      </div>
+      <div v-else>
+        <t-form label-align="top" style="margin-bottom:16px;">
+          <t-form-item :label="lang.tool_test_client_id">
+            <t-input-number v-model="testParams.client_id" :min="1" style="width:200px;"></t-input-number>
+          </t-form-item>
+          <t-form-item :label="lang.tool_test_ticket_id">
+            <t-input-number v-model="testParams.ticket_id" :min="1" style="width:200px;"></t-input-number>
+          </t-form-item>
+          <t-form-item>
+            <t-button theme="primary" @click="runTest" :loading="testLoading">{{lang.tool_test}}</t-button>
+          </t-form-item>
+        </t-form>
+        <div v-if="testResult !== null" style="background:#f5f5f5;padding:12px;border-radius:4px;max-height:300px;overflow:auto;">
+          <t-tag v-if="testSuccess" theme="success" variant="light" style="margin-bottom:8px;">{{lang.tool_test_success}}</t-tag>
+          <t-tag v-else theme="danger" variant="light" style="margin-bottom:8px;">{{lang.tool_test_fail}}</t-tag>
+          <pre style="white-space:pre-wrap;word-break:break-all;font-size:13px;">{{testResult}}</pre>
+        </div>
+      </div>
+    </t-dialog>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/tool.js"></script>

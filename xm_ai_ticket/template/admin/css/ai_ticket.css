@@ -1,0 +1,23 @@
+/* AI工单客服 - 后台样式 */
+.common-tab {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  border-bottom: 1px solid #e7e7e7;
+}
+.common-tab li {
+  padding: 8px 20px;
+  cursor: pointer;
+}
+.common-tab li a {
+  color: #666;
+  text-decoration: none;
+}
+.common-tab li.active a {
+  color: #0052d9;
+  font-weight: bold;
+}
+.common-tab li:hover a {
+  color: #0052d9;
+}

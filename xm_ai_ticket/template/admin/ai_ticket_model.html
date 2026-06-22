@@ -1,0 +1,134 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li class="active"><a>{{lang.ai_model}}</a></li>
+        <li><a href="ai_ticket_department.htm">{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+        <li><a href="ai_ticket_log.htm">{{lang.ai_log}}</a></li>
+        <li><a href="ai_ticket_tool.htm">{{lang.ai_tool}}</a></li>
+        <li><a href="ai_ticket_setting.htm">{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <div class="order-search-wrapper">
+        <div class="flex">
+          <t-button theme="primary" @click="showAddDialog">{{lang.add_model}}</t-button>
+          <t-button theme="default" variant="base" @click="showCronDialog">{{lang.cron_config}}</t-button>
+          <t-select v-model="filterProvider" :placeholder="lang.filter_provider" clearable
+            :options="providerOptions" class="com-gap select-time" @change="doSearch"></t-select>
+          <t-select v-model="filterStatus" :placeholder="lang.filter_status" clearable
+            :options="statusOptions" class="com-gap select-time" @change="doSearch"></t-select>
+        </div>
+      </div>
+
+      <t-table :data="list" :columns="columns" :loading="loading" row-key="id" hover>
+        <template #provider="{row}">
+          {{getProviderLabel(row.provider)}}
+        </template>
+        <template #is_default="{row}">
+          <t-tag v-if="row.is_default==1" theme="success" variant="light">{{lang.yes}}</t-tag>
+          <t-tag v-else theme="default" variant="light">{{lang.no}}</t-tag>
+        </template>
+        <template #status="{row}">
+          <t-tag v-if="row.status==1" theme="success" variant="light">{{lang.enabled}}</t-tag>
+          <t-tag v-else theme="danger" variant="light">{{lang.disabled}}</t-tag>
+        </template>
+        <template #supports_tool_call="{row}">
+          <t-tag v-if="row.supports_tool_call==1" theme="success" variant="light">{{lang.yes}}</t-tag>
+          <t-tag v-else theme="default" variant="light">{{lang.no}}</t-tag>
+        </template>
+        <template #op="{row}">
+          <t-button theme="primary" variant="text" size="small" @click="editModel(row)">{{lang.edit}}</t-button>
+          <t-button theme="primary" variant="text" size="small" @click="testModel(row)">{{lang.test}}</t-button>
+          <t-button theme="danger" variant="text" size="small" @click="deleteModel(row)">{{lang.delete}}</t-button>
+        </template>
+      </t-table>
+
+      <com-pagination :total="count" :page="params.page" :limit="params.limit" @change="changePage"></com-pagination>
+    </t-card>
+
+    <!-- 添加/编辑模型弹窗 -->
+    <t-dialog :header="dialogTitle" :footer="false" :visible.sync="addVisible" destroy-on-close width="500px">
+      <t-form :data="formData" :rules="formRules" ref="formRef" label-align="top" @submit="submitModel">
+        <t-form-item :label="lang.model_name" name="name">
+          <t-input v-model="formData.name" :placeholder="lang.input_model_name"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.provider" name="provider">
+          <t-select v-model="formData.provider" :options="providerOptions"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.api_url" name="api_url">
+          <t-input v-model="formData.api_url" :placeholder="lang.input_api_url"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.api_key" name="api_key">
+          <t-input v-model="formData.api_key" :placeholder="lang.input_api_key" type="password"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.model_id" name="model">
+          <t-input v-model="formData.model" :placeholder="lang.input_model_id"></t-input>
+        </t-form-item>
+        <t-form-item :label="lang.max_tokens" name="max_tokens">
+          <t-input-number v-model="formData.max_tokens" :min="1" :max="4096"></t-input-number>
+        </t-form-item>
+        <t-form-item :label="lang.supports_tool_call" name="supports_tool_call">
+          <t-switch v-model="formData.supports_tool_call" :custom-value="[1,0]"></t-switch>
+          <div style="color:#999;font-size:12px;margin-top:4px;">{{lang.supports_tool_call_tip}}</div>
+        </t-form-item>
+        <t-form-item :label="lang.is_default" name="is_default">
+          <t-switch v-model="formData.is_default" :custom-value="[1,0]"></t-switch>
+        </t-form-item>
+        <t-form-item :label="lang.status" name="status">
+          <t-switch v-model="formData.status" :custom-value="[1,0]"></t-switch>
+        </t-form-item>
+        <t-form-item>
+          <t-button theme="primary" type="submit">{{lang.submit}}</t-button>
+          <t-button theme="default" @click="addVisible = false" style="margin-left:10px;">{{lang.cancel || '取消'}}</t-button>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+
+    <!-- 测试结果弹窗 -->
+    <t-dialog :header="lang.test_result" :footer="false" :visible.sync="testVisible" width="500px">
+      <div v-if="testLoading" style="text-align:center;padding:20px;">
+        <t-loading size="medium"></t-loading>
+        <p>{{lang.testing}}</p>
+      </div>
+      <div v-else>
+        <t-tag v-if="testSuccess" theme="success" variant="light" style="margin-bottom:10px;">{{lang.test_success}}</t-tag>
+        <t-tag v-else theme="danger" variant="light" style="margin-bottom:10px;">{{lang.test_fail}}</t-tag>
+        <p>{{testResponse}}</p>
+      </div>
+    </t-dialog>
+
+    <!-- 定时任务配置弹窗 -->
+    <t-dialog :header="lang.cron_config" :footer="false" :visible.sync="cronVisible" width="550px">
+      <div style="margin-bottom:16px;">
+        <p style="margin-bottom:8px;color:#666;">{{lang.cron_url_tip}}</p>
+        <t-input :value="cronUrl" readonly>
+          <template #suffix-icon>
+            <t-button theme="primary" variant="text" size="small" @click="copyCronUrl">{{lang.copy}}</t-button>
+          </template>
+        </t-input>
+      </div>
+      <div style="margin-bottom:16px;">
+        <p style="margin-bottom:8px;font-weight:bold;">{{lang.cron_shell_tip}}</p>
+        <t-input :value="cronShell" readonly>
+          <template #suffix-icon>
+            <t-button theme="primary" variant="text" size="small" @click="copyCronShell">{{lang.copy}}</t-button>
+          </template>
+        </t-input>
+      </div>
+      <div style="background:#f5f5f5;padding:12px;border-radius:4px;font-size:13px;color:#666;">
+        <p style="margin-bottom:6px;">{{lang.cron_help_1}}</p>
+        <p>{{lang.cron_help_2}}</p>
+      </div>
+      <div style="margin-top:16px;text-align:right;">
+        <t-button theme="default" @click="cronVisible = false">{{lang.close || '关闭'}}</t-button>
+      </div>
+    </t-dialog>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/model.js"></script>

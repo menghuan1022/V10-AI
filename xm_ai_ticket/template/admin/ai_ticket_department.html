@@ -1,0 +1,81 @@
+<link rel="stylesheet" href="/plugins/addon/xm_ai_ticket/template/admin/css/ai_ticket.css" />
+
+<div id="content" class="template" v-cloak>
+  <com-config>
+    <t-card class="list-card-container">
+      <ul class="common-tab">
+        <li><a href="ai_ticket_model.htm">{{lang.ai_model}}</a></li>
+        <li class="active"><a>{{lang.department_config}}</a></li>
+        <li><a href="ai_ticket_product.htm">{{lang.product_bind}}</a></li>
+        <li><a href="ai_ticket_log.htm">{{lang.ai_log}}</a></li>
+        <li><a href="ai_ticket_tool.htm">{{lang.ai_tool}}</a></li>
+        <li><a href="ai_ticket_setting.htm">{{lang.plugin_setting}}</a></li>
+      </ul>
+
+      <div class="order-search-wrapper">
+        <div class="flex">
+          <t-button theme="primary" @click="showAddDialog">{{lang.add_department_config}}</t-button>
+        </div>
+      </div>
+
+      <t-table :data="list" :columns="columns" :loading="loading" row-key="id" hover>
+        <template #auto_reply="{row}">
+          <t-tag v-if="row.auto_reply==1" theme="success" variant="light">{{lang.enabled}}</t-tag>
+          <t-tag v-else theme="danger" variant="light">{{lang.disabled}}</t-tag>
+        </template>
+        <template #reply_interval="{row}">
+          {{row.reply_interval}}{{lang.second}}
+        </template>
+        <template #max_reply_chars="{row}">
+          {{row.max_reply_chars}}{{lang.char}}
+        </template>
+        <template #persona="{row}">
+          <t-tooltip :content="row.persona || lang.default_persona">
+            <span>{{row.persona ? (row.persona.length > 30 ? row.persona.substring(0,30)+'...' : row.persona) : lang.default_persona}}</span>
+          </t-tooltip>
+        </template>
+        <template #op="{row}">
+          <t-button theme="primary" variant="text" size="small" @click="editRow(row)">{{lang.edit}}</t-button>
+          <t-button theme="danger" variant="text" size="small" @click="deleteRow(row)">{{lang.delete}}</t-button>
+        </template>
+      </t-table>
+    </t-card>
+
+    <!-- 添加/编辑配置弹窗 -->
+    <t-dialog :header="dialogTitle" :footer="false" :visible.sync="addVisible" destroy-on-close width="600px">
+      <t-form :data="formData" :rules="formRules" ref="formRef" label-align="top" @submit="submitRow">
+        <t-form-item :label="lang.ticket_type" name="ticket_type_id">
+          <t-select v-model="formData.ticket_type_id" :options="typeOptions" :keys="{label:'name',value:'id'}" :disabled="isEdit"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.ai_model" name="ai_model_id">
+          <t-select v-model="formData.ai_model_id" :options="modelOptions" :keys="{label:'name',value:'id'}"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.auto_reply" name="auto_reply">
+          <t-select v-model="formData.auto_reply" :options="autoReplyOptions"></t-select>
+        </t-form-item>
+        <t-form-item :label="lang.reply_interval" name="reply_interval">
+          <t-input-number v-model="formData.reply_interval" :min="10" :max="600"></t-input-number>
+          <span style="margin-left:8px;">{{lang.second}}</span>
+        </t-form-item>
+        <t-form-item :label="lang.max_reply_chars" name="max_reply_chars">
+          <t-input-number v-model="formData.max_reply_chars" :min="10" :max="500"></t-input-number>
+          <span style="margin-left:8px;">{{lang.char}}</span>
+        </t-form-item>
+        <t-form-item :label="lang.persona" name="persona">
+          <t-textarea v-model="formData.persona" :placeholder="lang.persona_placeholder" :maxlength="1000"></t-textarea>
+        </t-form-item>
+        <t-form-item :label="lang.closing_remark" name="closing_remark">
+          <t-textarea v-model="formData.closing_remark" :placeholder="lang.closing_remark_placeholder" :maxlength="500"></t-textarea>
+        </t-form-item>
+        <t-form-item>
+          <t-button theme="primary" type="submit">{{lang.submit}}</t-button>
+          <t-button theme="default" @click="addVisible = false" style="margin-left:10px;">{{lang.cancel || '取消'}}</t-button>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+  </com-config>
+</div>
+
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/lang.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/api/ai_ticket.js"></script>
+<script src="/plugins/addon/xm_ai_ticket/template/admin/js/department.js"></script>
